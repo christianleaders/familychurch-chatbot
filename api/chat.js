@@ -55,39 +55,66 @@ export default async function handler(req, res) {
     }
 
     function scorePage(query, title, text, url) {
-      const q = query.toLowerCase();
-      const haystack = `${title} ${text} ${url}`.toLowerCase();
+  const q = query.toLowerCase();
+  const haystack = `${title} ${text} ${url}`.toLowerCase();
 
-      const keywords = q.split(/\s+/).filter(Boolean);
-      let score = 0;
+  const keywords = q.split(/\s+/).filter(Boolean);
+  let score = 0;
 
-      for (const word of keywords) {
-        if (haystack.includes(word)) score += 3;
-        if (title.toLowerCase().includes(word)) score += 4;
-        if (url.toLowerCase().includes(word)) score += 5;
-      }
+  for (const word of keywords) {
+    if (haystack.includes(word)) score += 3;
+    if (title.toLowerCase().includes(word)) score += 4;
+    if (url.toLowerCase().includes(word)) score += 5;
+  }
 
-      // Heuristics for common church questions
-      if (q.includes("youth") || q.includes("student") || q.includes("teen")) {
-        if (url.includes("family-students")) score += 20;
-      }
+  const isHomepage = url === "https://familychurch.app/" || url === "https://familychurch.app";
+  const isCampusPage =
+    url.includes("redwood-campus") ||
+    url.includes("grace-campus") ||
+    url.includes("haven-campus") ||
+    url.includes("ebenezer-campus");
 
-      if (q.includes("kids") || q.includes("children")) {
-        if (url.includes("family-kids")) score += 20;
-      }
+  const lowerText = text.toLowerCase();
+  const lowerTitle = title.toLowerCase();
 
-      if (q.includes("sermon") || q.includes("message") || q.includes("recent") || q.includes("latest")) {
-        if (url.includes("/media")) score += 15;
-        if (url.includes("/watch")) score += 10;
-        if (url.includes("/sermons")) score += 10;
-      }
+  if (q.includes("youth") || q.includes("student") || q.includes("teen")) {
+    if (url.includes("family-students")) score += 20;
+  }
 
-      if (q.includes("service") || q.includes("times") || q.includes("location") || q.includes("campus")) {
-        if (url.includes("campus")) score += 15;
-      }
+  if (q.includes("kids") || q.includes("children")) {
+    if (url.includes("family-kids")) score += 20;
+  }
 
-      return score;
+  if (
+    q.includes("sermon") ||
+    q.includes("message") ||
+    q.includes("preach") ||
+    q.includes("preached") ||
+    q.includes("latest") ||
+    q.includes("recent") ||
+    q.includes("last sermon")
+  ) {
+    if (isCampusPage) score += 35;
+    if (url.includes("/media")) score += 20;
+    if (url.includes("/watch")) score += 15;
+    if (url.includes("/sermons")) score += 15;
+
+    if (isHomepage) score -= 40;
+
+    if (lowerTitle.includes("daily encouragement") || lowerText.includes("daily encouragement")) {
+      score -= 50;
     }
+
+    if (lowerText.includes("previously recorded services")) score += 20;
+    if (lowerText.includes("watch redwood on-demand")) score += 25;
+  }
+
+  if (q.includes("service") || q.includes("times") || q.includes("location") || q.includes("campus")) {
+    if (url.includes("campus")) score += 15;
+  }
+
+  return score;
+}
 
     async function fetchText(url) {
       try {
