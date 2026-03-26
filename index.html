@@ -241,9 +241,13 @@
           </div>
         `;
       } else {
-        bubble.textContent = text;
+    bubble.innerHTML = linkifyText(text);
       }
-
+.assistant .bubble a {
+  color: #7cc7ff;
+  text-decoration: underline;
+  word-break: break-word;
+}
       row.appendChild(bubble);
       chatEl.appendChild(row);
       chatEl.scrollTop = chatEl.scrollHeight;
@@ -255,7 +259,23 @@
       e.preventDefault();
       const message = input.value.trim();
       if (!message) return;
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
+function linkifyText(text) {
+  const escaped = escapeHtml(text);
+
+  return escaped.replace(
+    /(https?:\/\/[^\s<]+)/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+  ).replace(/\n/g, "<br>");
+}
       addMessage(message, "user");
       input.value = "";
       autoResize();
