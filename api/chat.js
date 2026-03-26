@@ -219,6 +219,9 @@ Rules:
 - If unsure about church info, say so and provide the closest relevant link.
 - Keep answers clear and welcoming.
 If the user asks for the most recent sermon or latest content:
+- When you mention a Family Church page, always include the full direct URL on its own line.
+- For sermon questions, prefer campus pages and on-demand service sections over the homepage.
+- Do not treat "Daily Encouragement" as a sermon unless the page explicitly says it is a sermon.
 - Prefer media/watch/sermon pages from the provided context.
 - If a latest item is visible in the supplied content, name it and link it.
             `.trim()
