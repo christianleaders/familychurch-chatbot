@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <title>Family Church Assistant</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"
+  />
   <style>
     * {
       box-sizing: border-box;
@@ -27,7 +30,6 @@
       flex-direction: column;
     }
 
-    /* TOP SECTION */
     .app-header {
       padding: 32px 16px 16px;
       text-align: center;
@@ -54,7 +56,6 @@
       margin-top: 24px;
     }
 
-    /* CHAT */
     .chat {
       flex: 1;
       padding: 16px;
@@ -81,8 +82,9 @@
       padding: 10px 14px;
       border-radius: 18px;
       font-size: 15px;
-      line-height: 1.4;
+      line-height: 1.5;
       word-wrap: break-word;
+      white-space: normal;
     }
 
     .user .bubble {
@@ -97,7 +99,12 @@
       border-bottom-left-radius: 4px;
     }
 
-    /* --- Animated typing bubble --- */
+    .assistant .bubble a {
+      color: #7cc7ff;
+      text-decoration: underline;
+      word-break: break-word;
+    }
+
     .typing-dots {
       display: flex;
       gap: 4px;
@@ -113,16 +120,20 @@
       animation: blink 1.4s infinite;
     }
 
-    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    .typing-dots span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing-dots span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
 
     @keyframes blink {
-      0%   { opacity: 0.3; }
-      50%  { opacity: 1; }
+      0% { opacity: 0.3; }
+      50% { opacity: 1; }
       100% { opacity: 0.3; }
     }
 
-    /* BOTTOM BAR */
     .composer {
       position: sticky;
       bottom: 0;
@@ -183,6 +194,7 @@
         max-width: 720px;
         margin: 0 auto;
       }
+
       .chat {
         padding-inline: 40px;
       }
@@ -191,11 +203,9 @@
 </head>
 <body>
   <div class="app">
-
     <header class="app-header">
-      <img src="family church logo.jpg" alt="Family Church Logo" />
       <div class="app-title">Family Church Assistant</div>
-      <div id="hero" class="hero">What can I help with?</div>
+      <div id="hero" class="hero">Ask about ministries, campuses, service times, or sermons.</div>
     </header>
 
     <main id="chat" class="chat"></main>
@@ -203,7 +213,11 @@
     <div class="composer">
       <form id="chat-form">
         <div class="composer-inner">
-          <textarea id="message-input" rows="1" placeholder="Ask anything..."></textarea>
+          <textarea
+            id="message-input"
+            rows="1"
+            placeholder="Ask anything..."
+          ></textarea>
           <button id="send-btn" type="submit">➤</button>
         </div>
       </form>
@@ -221,7 +235,28 @@
       input.style.height = "auto";
       input.style.height = input.scrollHeight + "px";
     }
+
     input.addEventListener("input", autoResize);
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function linkifyText(text) {
+      const escaped = escapeHtml(text);
+
+      return escaped
+        .replace(
+          /(https?:\/\/[^\s<]+)/g,
+          '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+        )
+        .replace(/\n/g, "<br>");
+    }
 
     function addMessage(text, role, opts = {}) {
       if (hero && hero.style.display !== "none") {
@@ -241,13 +276,9 @@
           </div>
         `;
       } else {
-    bubble.innerHTML = linkifyText(text);
+        bubble.innerHTML = linkifyText(text);
       }
-.assistant .bubble a {
-  color: #7cc7ff;
-  text-decoration: underline;
-  word-break: break-word;
-}
+
       row.appendChild(bubble);
       chatEl.appendChild(row);
       chatEl.scrollTop = chatEl.scrollHeight;
@@ -257,29 +288,13 @@
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
+
       const message = input.value.trim();
       if (!message) return;
-function escapeHtml(str) {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
 
-function linkifyText(text) {
-  const escaped = escapeHtml(text);
-
-  return escaped.replace(
-    /(https?:\/\/[^\s<]+)/g,
-    '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
-  ).replace(/\n/g, "<br>");
-}
       addMessage(message, "user");
       input.value = "";
       autoResize();
-
       sendBtn.disabled = true;
 
       const typingRow = addMessage("", "assistant", { typing: true });
@@ -293,13 +308,23 @@ function linkifyText(text) {
 
         const data = await res.json();
         chatEl.removeChild(typingRow);
-        addMessage(data.reply || "Sorry, I couldn't understand that.", "assistant");
 
+        if (!res.ok) {
+          console.error("API error:", data);
+          addMessage(
+            data.error ? `Error: ${data.error}` : "Something went wrong.",
+            "assistant"
+          );
+        } else {
+          addMessage(
+            data.reply || "Sorry, I couldn't generate a response.",
+            "assistant"
+          );
+        }
       } catch (err) {
         console.error(err);
         chatEl.removeChild(typingRow);
         addMessage("Something went wrong. Please try again.", "assistant");
-
       } finally {
         sendBtn.disabled = false;
       }
