@@ -248,7 +248,7 @@
         .replace(/'/g, "&#039;");
     }
 
-    function linkifyText(text) {
+   function linkifyText(text) {
   const escaped = escapeHtml(text);
 
   // Convert Markdown links [text](url)
@@ -257,11 +257,13 @@
     '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
   );
 
-  // Convert plain URLs
+  // Convert plain URLs and remove trailing punctuation from the link
   return withMarkdownLinks
     .replace(
-      /(^|[\s>])(https?:\/\/[^\s<]+)/g,
-      '$1<a href="$2" target="_blank" rel="noopener noreferrer">$2</a>'
+      /(^|[\s>])(https?:\/\/[^\s<]+?)([.,!?)]?)(?=\s|$)/g,
+      (match, prefix, url, punctuation) => {
+        return `${prefix}<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>${punctuation}`;
+      }
     )
     .replace(/\n/g, "<br>");
 }
